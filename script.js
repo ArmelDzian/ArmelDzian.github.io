@@ -1,155 +1,96 @@
+/*  Recursive Backtracking Maze Generator
+    Code by Armel Dzian (2018)
+*/
 
+//cell matrix in which the maze will be crated
+function makeTable(cols,rows,size){
+    let table = [];
+    for (let i = 0; i<rows;i++){
+        let line=[];
+        for (let j = 0; j<cols;j++){
+
+            //every element of the matrix is a cell class object from cell.js
+            line.push(new Cell(j,i,size));
+        }
+        table.push(line);
+    }
+    return table;
+}
+
+// depending on their relevant position, removes walls between the current cell and the one selected as next
+function removeWalls(current,choosen){
+
+    // compare relative x position
+    if(current.x-choosen.x < 0){
+        current.walls.right = false;
+        choosen.walls.left = false;
+    }else if(current.x-choosen.x > 0){
+        current.walls.left = false;
+        choosen.walls.right = false;
+    }
+
+    // compare relative y postion
+    if(current.y-choosen.y < 0){
+        current.walls.bottom = false;
+        choosen.walls.top = false;
+    }else if(current.y-choosen.y > 0){
+        current.walls.top = false;
+        choosen.walls.bottom = false;
+    }
+}
+
+// main function run by the index.html on body load
 function init(){
-    var startMenu = true;
-    var gamerun = false; // control variable for the game over window
-    var gameDisplayed; // control variable for the reload sequance after game over
-    var nbJumps = 0;
-    var score = 0;
-    var bestScore = 0;
-    var oldScore = 0;
-    var container = document.getElementById('container'); //initialy contains the canvas
-    var canvas = document.getElementById("myCanvas"); // html reference for the cenvas
-    var ctx; // html reference for the drawing tool
-    var obstacles;
-    var player;
-    //speed and acceleration
-    var dx = 1;
-    var verticalSpeedPlayer = 0;
-    var gravity = 0.07;
+    let canvas = document.getElementById("myCanvas"); //reference to html canvas
+    let ctx = canvas.getContext("2d"); //reference to html canvas context, used for the visualisation
+    let cellSize = 30; //default cell size, determinates the number and size of cells in the matrix (TWEAK)
+    let cols = Math.floor(canvas.width/cellSize); //determinates the number of columns
+    let rows = Math.floor(canvas.height/cellSize); //determinates the number of rows
+    let table = makeTable(cols,rows,cellSize); // the matrix
+    let currentCell = table[0][0];
+    let stack = []; // stack is used to store the visited cells in order to ba able to come back in the backtrack phase
 
-    function getObstacle(randomizer, array){ // obstacle generator takes in a random number 0<n<1 and the obtacle array
-        if(randomizer < 0.005){
-            var newObstacle = { x:canvas.width, y:canvas.height-5 - 16 , height:16, width:8};
-            array.push(newObstacle);
-        }
-    }
+    /* DEBUGING 
+    console.log(canvas.width);
+    console.log(canvas.height);
+    console.table(table);
 
-    function draw(){ // display faunction
-        document.getElementById("score").innerHTML = "SCORE : " + score.toString();
-        document.getElementById("bestScore").innerHTML = "BEST SCORE : " + bestScore.toString();
-        ctx.clearRect(0, 0, canvas.width, canvas.height); // refresh
-        if (obstacles.length > 0){
-            for (var i = 0; i < obstacles.length; i++){ // obstacle drawing
-                ctx.beginPath();
-                    ctx.rect(obstacles[i].x, obstacles[i].y, obstacles[i].width, obstacles[i].height);
-                    ctx.fillStyle = "#666666";
-                    ctx.fill();
-                ctx.closePath();
-            }
-        }
-        ctx.beginPath(); // player drawing
-            ctx.rect(player.x, player.y, player.width, player.height);
-            ctx.fillStyle = "#cc0000";
-            ctx.fill();
-        ctx.closePath();
+    */
 
-        ctx.beginPath(); // ground line drawing
-            ctx.rect(0, canvas.height-5, canvas.width, 1);
-            ctx.fillStyle = "#666666";
-            ctx.fill();
-        ctx.closePath();
-    }
+    // main loop repeated by the setInterval function
+    function loop(){
 
-    function loop() { // main loop function
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // clear canvas
 
-        if(startMenu){ // initiative sequence
-            container.innerHTML = "<h1> PRESS 'UP' TO PLAY </h1>";
-            document.body.onkeydown = function(e){
-                if(e.keyCode == 38){
-                    container.innerHTML = '<canvas id="myCanvas"></canvas> <h2>PRESS "UP" TO JUMP</h2>';
-                    canvas = document.getElementById("myCanvas"); // html reference for the cenvas
-                    ctx = canvas.getContext("2d"); // html reference for the drawing tool
-                    obstacles = [];
-                    player = {x:canvas.width/6, y:canvas.height-5 - 16, height:20, width:10};
-                    getObstacle(0,obstacles); // first obstacle
-                    gamerun = true;
-                    startMenu = false;
-                }
-            }
-        }else if(gamerun){
-            gameDisplayed = true;
-            score++;
-            if(score > bestScore){
-                bestScore = score;
-            }
-            if(score-oldScore == 1000){
-                dx += 0.02;
-                oldScore=score;
-                console.log("speed up to " + dx.toString());
-            }
-            document.body.onkeydown = function(e){
-                if(e.keyCode == 38){
-                    if(nbJumps == 0){
-                        console.log("Big jump");
-                        verticalSpeedPlayer = 2.8;
-                        nbJumps++;
-                    }else if(nbJumps == 1){
-                        console.log("Small jump");
-                        verticalSpeedPlayer = 1.8;
-                        nbJumps++;
-                    }
-                }
-            }
-
-
-            if (player.y + player.height >= canvas.height-5 && verticalSpeedPlayer < 0){ //player is walking or felt to the ground
-                console.log("walk");
-                player.y = canvas.height-5-player.height;
-                verticalSpeedPlayer = 0;
-                verticalAccelerationPlayer = 0;
-                nbJumps=0;
-            }else{ // player is flying or falling
-                player.y -= verticalSpeedPlayer;
-                verticalSpeedPlayer -= gravity; 
-            }
+        currentCell.visited = true;
         
-            for (var i = 0; i < obstacles.length; i++){ // obstacle position update
-                if (obstacles.length > 0){
-                    obstacles[i].x -= dx;
-                    if (obstacles[i].x-obstacles[i].width < 0){ // delete the obstacle which passes over the left border of the canvas
-    //                   if(obstacles.length <= 1){
-    //                       getObstacle(0,obstacles);
-    //                   } 
-                        obstacles.splice(i,1);
-                        i--;
-                    }else if((obstacles[i].x <= player.x + player.width) && (obstacles[i].x >= player.x) && (obstacles[i].y >= player.y) && (obstacles[i].y <= player.y+player.height)){
-                        // Check for collision with the player
-                        console.log("collision")
-                        gamerun = false;
-                    }
-                }
-            }
-
-            if ( obstacles.length < 1 ){ // generate a new obstacle even if there is none in the playground
-                getObstacle(Math.random(),obstacles);
-            }else if ( obstacles[obstacles.length-1].x < canvas.width-obstacles[obstacles.length-1].width){ // if the last obstacle is clear of the canvas edge, try to generate  new one
-                getObstacle(Math.random(),obstacles);
-            }
-            draw(); // call for the display refreshment
-
-        }else{
-            if(gameDisplayed){
-                console.log(document.body.innerHTML);
-                ctx.clearRect(0, 0, canvas.width, canvas.height); // refresh
-                container.innerHTML = "<h1> GAME OVER </h1> <h2>PRESS 'UP' TO RESTART</h2>";
-                score = 0;
-                gameDisplayed = false;
-            }else{
-                document.body.onkeydown = function(e){
-                    if(e.keyCode == 38){
-                        container.innerHTML = '<canvas id="myCanvas"></canvas>';
-                        dx = 1;
-                        obstacles = [];
-                        getObstacle(0,obstacles);
-                        player = {x:canvas.width/6, y:canvas.height-5 - 16, height:20, width:10};
-                        canvas = document.getElementById("myCanvas"); // html reference for the cenvas
-                        ctx = canvas.getContext("2d"); // html reference for the drawing tool
-                        gamerun = true;
-                    }
-                }
+        // display all cells in the matrix
+        for (let i = 0; i<table.length;i++){
+            for (let j = 0; j<table[i].length;j++){
+                table[i][j].show();
             }
         }
-    }
 
-    setInterval(loop, 10); // drawing loop set to repeate every 10 ms
+        // highlight with a different color the current cell
+        currentCell.highlight();
+
+        if(currentCell.checkNeighbours(table).length != 0){
+            // if there are neighbours to the current cell that havent been visited
+            // put the current cell to the stack:
+            stack.push(currentCell);
+            // choose randomly the next cell to be visited:
+            let choosenCell = currentCell.checkNeighbours(table)[Math.floor(Math.random()*currentCell.checkNeighbours(table).length)];
+            // remove the walls between current and choosen cell:
+            removeWalls(currentCell,choosenCell);
+            // set the choosen cell as the current:
+            currentCell = choosenCell;
+
+        }else if (stack.length > 0){
+            //else if there is no unvisited neighbour cell and the stack is not empty
+            //set the last visited cell from the stack as the current cell:
+            currentCell = stack.pop();
+        }
+    }
+    // repate the loop() funtion every 200 ms (TWEAK)
+    setInterval(loop,150);
 }
