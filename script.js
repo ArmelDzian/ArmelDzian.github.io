@@ -54,7 +54,6 @@ function init(){
     console.log(canvas.width);
     console.log(canvas.height);
     console.table(table);
-
     */
 
     // main loop repeated by the setInterval function
