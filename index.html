@@ -1,23 +1,25 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Maze Generator</title>
-        <style>
-            #myCanvas {
-                background-color:rgb(255, 255, 255);
-                margin: 0;
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-            }
-        </style>
-        <script src="script.js"></script>
-        <script src="cell.js"></script>
+        <title>My website</title>
+        <link rel="stylesheet" href="styles.css"></link>
     </head>
-    <body onload="init()">
-        <h1 style="text-align: center">Maze Generator</h1>
-        <h2 style="text-align: center">by Armel Dzian</h2>
-        <canvas id="myCanvas" width="600" height="600"></canvas>
+    <body>
+        <div id="header">
+            <h1>ARMEL'S WEBSITE</h1>
+            <h2>Here, you can find my coding mini-projects</h2>
+        </div>
+        <div id="content">
+                <button onclick="location.href='mazeGenerator/index.thml'" >Maze Generator</button>
+                <!-- <button onclick="location.href='test.html'" >Other project</button> -->
+            </div>
+        <div id="footer">
+            <div id="social">
+                <p>Be sure to follow me on social networks:</p>
+                <a href="https://github.com/ArmelDzian">GitHub</a>
+                <a href="https://www.instagram.com/armel.dzian/">Instagram</a>
+            </div>
+            <p> © 2018 Armel E. Dzian</p>
+        </div>
     </body>
 </html>
