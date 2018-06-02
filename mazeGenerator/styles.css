@@ -1,8 +1,13 @@
-
+#header {
+    margin-top: 20px
+}
 h1 {
     padding-top: 20px;
     text-align: center;
     font-size: 35px;
+}
+h2{
+    float: left;
 }
 #footer{
     text-align: center;
